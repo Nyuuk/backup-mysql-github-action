@@ -40,12 +40,12 @@ jobs:
           rm backups/backup_$TIMESTAMP.sql
           echo "BACKUP_FILENAME=mysql_backup_$TIMESTAMP.tar.gz" >> $GITHUB_ENV
           
-      - name: Upload backup to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: mysql-backup
-          path: backups/mysql_backup_*.tar.gz
-          retention-days: 7
+    #   - name: Upload backup to artifacts
+    #     uses: actions/upload-artifact@v3
+    #     with:
+    #       name: mysql-backup
+    #       path: backups/mysql_backup_*.tar.gz
+    #       retention-days: 7
       
       - name: Get database size info
         run: |
