@@ -25,6 +25,7 @@ jobs:
       - name: Create backup
         run: |
           TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           mysqldump --host=${{ secrets.DB_HOST }} \
                    --port=${{ secrets.DB_PORT || 3306 }} \
                    --user=${{ secrets.DB_USER }} \
@@ -32,10 +33,11 @@ jobs:
                    --databases ${{ secrets.DB_NAME }} \
                    --result-file=backups/backup_$TIMESTAMP.sql \
                    --no-tablespaces
+          ls -lh backups
         
       - name: Compress backup
         run: |
-          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          TIMESTAMP=${{ env.TIMESTAMP }}
           tar -czvf backups/mysql_backup_$TIMESTAMP.tar.gz backups/backup_$TIMESTAMP.sql
           rm backups/backup_$TIMESTAMP.sql
           echo "BACKUP_FILENAME=mysql_backup_$TIMESTAMP.tar.gz" >> $GITHUB_ENV
