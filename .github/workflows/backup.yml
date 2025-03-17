@@ -1,0 +1,88 @@
+name: MySQL Database Backup
+
+on:
+  schedule:
+    # Dijalankan setiap hari pada jam 01:00 UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    # Memungkinkan backup manual dari tab Actions di GitHub
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+          
+      - name: Create backup directory
+        run: mkdir -p backups
+      
+      - name: Create backup
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          mysqldump --host=${{ secrets.DB_HOST }} \
+                   --port=${{ secrets.DB_PORT || 3306 }} \
+                   --user=${{ secrets.DB_USER }} \
+                   --password=${{ secrets.DB_PASSWORD }} \
+                   --databases ${{ secrets.DB_NAME }} \
+                   --result-file=backups/backup_$TIMESTAMP.sql \
+                   --no-tablespaces
+        
+      - name: Compress backup
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          tar -czvf backups/mysql_backup_$TIMESTAMP.tar.gz backups/backup_$TIMESTAMP.sql
+          rm backups/backup_$TIMESTAMP.sql
+          echo "BACKUP_FILENAME=mysql_backup_$TIMESTAMP.tar.gz" >> $GITHUB_ENV
+          
+      - name: Upload backup to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: mysql-backup
+          path: backups/mysql_backup_*.tar.gz
+          retention-days: 7
+      
+      - name: Get database size info
+        run: |
+          BACKUP_SIZE=$(du -h backups/${{ env.BACKUP_FILENAME }} | cut -f1)
+          DB_NAME="${{ secrets.DB_NAME }}"
+          TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+          HOST="${{ secrets.DB_HOST }}"
+          echo "BACKUP_SIZE=$BACKUP_SIZE" >> $GITHUB_ENV
+          echo "BACKUP_TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+      
+      - name: Send notification to Telegram
+        run: |
+          MESSAGE="🗄️ *Database Backup Completed* 🗄️%0A%0A📊 *Database:* \`${{ secrets.DB_NAME }}\`%0A📅 *Date:* \`${{ env.BACKUP_TIMESTAMP }}\`%0A💾 *Size:* \`${{ env.BACKUP_SIZE }}\`%0A🖥️ *Server:* \`${{ secrets.DB_HOST }}\`%0A✅ *Status:* Successful"
+          
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"
+      
+      - name: Send backup file to Telegram
+        run: |
+          curl -F document=@"backups/${{ env.BACKUP_FILENAME }}" \
+            https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument \
+            -F chat_id=${{ secrets.B }} \
+            -F message_thread_id=${{ secrets.TELEGRAM_THREAD_ID }} \
+            -F caption="Database backup file: ${{ env.BACKUP_FILENAME }}"
+          
+      # Opsional: Unggah ke penyimpanan jangka panjang seperti AWS S3
+      # - name: Upload to S3
+      #   if: ${{ github.ref == 'refs/heads/main' }}
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.AWS_REGION }}
+      
+      # - name: Copy to S3
+      #   if: ${{ github.ref == 'refs/heads/main' }}
+      #   run: |
+      #     aws s3 cp backups/${{ env.BACKUP_FILENAME }} s3://${{ secrets.S3_BUCKET }}/database-backups/
