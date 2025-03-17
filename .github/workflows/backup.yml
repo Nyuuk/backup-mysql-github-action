@@ -65,13 +65,14 @@ jobs:
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -d text="$MESSAGE" \
+            -d message_thread_id=${{ secrets.TELEGRAM_THREAD_ID }} \
             -d parse_mode="Markdown"
       
       - name: Send backup file to Telegram
         run: |
           curl -F document=@"backups/${{ env.BACKUP_FILENAME }}" \
             https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument \
-            -F chat_id=${{ secrets.B }} \
+            -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
             -F message_thread_id=${{ secrets.TELEGRAM_THREAD_ID }} \
             -F caption="Database backup file: ${{ env.BACKUP_FILENAME }}"
           
