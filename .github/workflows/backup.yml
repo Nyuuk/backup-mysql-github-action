@@ -52,6 +52,7 @@ jobs:
       
       - name: Get database size info
         run: |
+          export TZ=Asia/Jakarta
           BACKUP_SIZE=$(du -h backups/${{ env.BACKUP_FILENAME }} | cut -f1)
           DB_NAME="${{ secrets.DB_NAME }}"
           TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
