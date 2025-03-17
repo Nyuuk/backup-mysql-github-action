@@ -3,7 +3,7 @@ name: MySQL Database Backup
 on:
   schedule:
     # Dijalankan setiap hari pada jam 01:00 UTC
-    - cron: '0 1 * * *'
+    - cron: '0 18 * * *'
   workflow_dispatch:
     # Memungkinkan backup manual dari tab Actions di GitHub
 
@@ -24,6 +24,7 @@ jobs:
       
       - name: Create backup
         run: |
+          export TZ=Asia/Jakarta
           TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           mysqldump --host=${{ secrets.DB_HOST }} \
