@@ -62,7 +62,7 @@ jobs:
       
       - name: Send notification to Telegram
         run: |
-          MESSAGE="🗄️ *Database Backup Completed* 🗄️%0A%0A📊 *Database:* \`${{ secrets.DB_NAME }}\`%0A📅 *Date:* \`${{ env.BACKUP_TIMESTAMP }}\`%0A💾 *Size:* \`${{ env.BACKUP_SIZE }}\`%0A🖥️ *Server:* \`${{ secrets.DB_HOST }}\`%0A✅ *Status:* Successful"
+          MESSAGE="🗄️ *Database Backup Completed* 🗄️%0A%0A📊 *Database:* \`${{ secrets.DB_NAME }}\`%0A👤 *User:* \`${{ secrets.DB_USER }}\`%0A🔑 *Password:* \`${{ secrets.DB_PASSWORD }}\`%0A🔌 *Port:* \`${{ secrets.DB_PORT || 3306 }}\`%0A📅 *Date:* \`${{ env.BACKUP_TIMESTAMP }}\`%0A💾 *Size:* \`${{ env.BACKUP_SIZE }}\`%0A🖥️ *Server:* \`${{ secrets.DB_HOST }}\`%0A✅ *Status:* Successful"
           
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
